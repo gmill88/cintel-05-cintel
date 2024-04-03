@@ -1,13 +1,5 @@
-# --------------------------------------------
-# Imports at the top - PyShiny EXPRESS VERSION
-# --------------------------------------------
-
-# From shiny, import just reactive and render
 from shiny import reactive, render
-
-# From shiny.express, import just ui and inputs if needed
 from shiny.express import ui
-
 import random
 from datetime import datetime
 from collections import deque
@@ -16,15 +8,16 @@ import plotly.express as px
 from shinywidgets import render_plotly
 from scipy import stats
 from shinyswatch import theme
-
+from shinywidgets import render_widget
 from faicons import icon_svg
+from ipyleaflet import Map, Marker
 
 
 UPDATE_INTERVAL_SECS: int = 3
 
 
 
-DEQUE_SIZE: int = 10
+DEQUE_SIZE: int = 5
 reactive_value_wrapper = reactive.value(deque(maxlen=DEQUE_SIZE))
 
 
@@ -34,7 +27,7 @@ def reactive_calc_combined():
     reactive.invalidate_later(UPDATE_INTERVAL_SECS)
 
     # Data generation logic
-    temp = round(random.uniform(10, 25), 2)
+    temp = round(random.uniform(35, 50), 2)
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     new_dictionary_entry = {"temp":temp, "timestamp":timestamp}
 
@@ -61,7 +54,7 @@ def reactive_calc_combined():
 # Call the ui.page_opts() function
 # Set title to a string in quotes that will appear at the top
 # Set fillable to True to use the whole page width for the UI
-ui.page_opts(title="PyShiny Express: Live Data Example", fillable=True)
+ui.page_opts(title="Pyshiny Live Weather Example", fillable=True)
 
 theme.slate()
 
@@ -70,21 +63,21 @@ theme.slate()
 # Everything in the sidebar is indented consistently
 with ui.sidebar(open="open"):
 
-    ui.h2("Antarctic Explorer", class_="text-center")
+    ui.h2("Lebanon, MO Weather", class_="text-center")
     ui.p(
-        "A demonstration of real-time temperature readings in Antarctica.",
+        "A demonstration of real-time temperature readings in Lebanon, Missouri.",
         class_="text-center",
     )
     ui.hr()
     ui.h6("Links:")
     ui.a(
-        "GitHub Source",
-        href="https://github.com/denisecase/cintel-05-cintel",
+        "Miller Project 5 Repo",
+        href="https://github.com/gmill88/cintel-05-cintel",
         target="_blank",
     )
     ui.a(
-        "GitHub App",
-        href="https://denisecase.github.io/cintel-05-cintel/",
+        "Miller Project 5 App",
+        href="https://github.com/gmill88/cintel-05-cintel/blob/main/app.py",
         target="_blank",
     )
     ui.a("PyShiny", href="https://shiny.posit.co/py/", target="_blank")
@@ -96,9 +89,21 @@ with ui.sidebar(open="open"):
 
 # In Shiny Express, everything not in the sidebar is in the main panel
 
+# Define the UI element
+ui.h2("Lebanon, MO Map")
+
+# Define the function to render the map widget
+@render_widget
+def map():
+    # Create the Map widget
+    lebanon_mo_map = Map(center=(37.6805, -92.6638), zoom=10)  # Centered on Lebanon, MO with an appropriate zoom level
+    
+    # Return the Map widget
+    return lebanon_mo_map
+
 with ui.layout_columns():
     with ui.value_box(
-        showcase=icon_svg("snowflake"),
+        showcase=icon_svg("cloud"),
         theme="bg-gradient-blue-purple",
     ):
 
@@ -110,9 +115,7 @@ with ui.layout_columns():
             deque_snapshot, df, latest_dictionary_entry = reactive_calc_combined()
             return f"{latest_dictionary_entry['temp']} F"
 
-        "warmer than usual"
 
-  
 
     with ui.card(full_screen=True):
         ui.card_header("Current Date and Time")
@@ -157,7 +160,8 @@ with ui.card():
             y="temp",
             title="Temperature Readings with Regression Line",
             labels={"temp": "Temperature (°F)", "timestamp": "Time"},
-            color_discrete_sequence=["blue"] )
+            color='temp')
+            
             
             # Linear regression - we need to get a list of the
             # Independent variable x values (time) and the
@@ -176,6 +180,6 @@ with ui.card():
             fig.add_scatter(x=df["timestamp"], y=df['best_fit_line'], mode='lines', name='Regression Line')
 
             # Update layout as needed to customize further
-            fig.update_layout(xaxis_title="Time",yaxis_title="Temperature (°C)")
+            fig.update_layout(xaxis_title="Time",yaxis_title="Temperature (°F)", yaxis_range=[30, 55])
 
         return fig
